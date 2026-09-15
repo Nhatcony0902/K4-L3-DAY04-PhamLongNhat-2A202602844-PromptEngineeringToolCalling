@@ -1,0 +1,7 @@
+{
+  "description": "Runtime guard for tools whose TOOL.md sets requires_confirmation: true. A call with confirmed=true is executed only when the previous assistant message showed the payload identifiers and the latest user message is a plain affirmative reply.",
+  "id_args": ["asset_id", "employee_id"],
+  "affirmative": ["xác nhận", "đồng ý", "đúng rồi", "đúng", "ok", "yes", "confirm"],
+  "negative": ["không", "đừng", "khoan", "hủy", "huỷ", "thôi", "sai", "đổi", "no", "don't", "cancel"],
+  "injection_markers": ["<", ">", "{", "}", "confirmed", "tool_results", "system:", "developer:"]
+}

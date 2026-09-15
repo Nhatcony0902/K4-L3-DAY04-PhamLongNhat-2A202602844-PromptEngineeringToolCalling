@@ -7,6 +7,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from confirmation_guard import confirmation_problem, guarded_result
 from env_loader import load_lab_env
 from providers import make_provider
 from providers.base import ToolCall
@@ -115,7 +116,11 @@ def run_model_tool_loop(
 
         for call in calls:
             print(f"[tool] {call.name}({json.dumps(call.args, ensure_ascii=True, sort_keys=True)})")
-            event = execute(call)
+            problem = confirmation_problem(call.name, call.args, messages)
+            event = (
+                {"tool": call.name, "args": call.args, "result": guarded_result(call.name, call.args, problem)}
+                if problem else execute(call)
+            )
             round_record["tool_results"].append(event)
             all_tool_events.append(event)
 

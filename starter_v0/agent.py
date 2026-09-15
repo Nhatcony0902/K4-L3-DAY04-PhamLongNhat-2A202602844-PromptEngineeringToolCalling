@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
+from confirmation_guard import confirmation_problem, guarded_result
 from providers.base import Provider, ToolCall
 from tools import TOOL_FUNCTIONS
 
@@ -42,6 +43,10 @@ class HelpdeskAgent:
             func = TOOL_FUNCTIONS.get(call.name)
             if not func:
                 results.append({"tool": call.name, "error": "unknown_tool"})
+                continue
+            problem = confirmation_problem(call.name, call.args, user_messages)
+            if problem:
+                results.append({"tool": call.name, "args": call.args, "result": guarded_result(call.name, call.args, problem)})
                 continue
             try:
                 result = func(**call.args)
