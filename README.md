@@ -82,20 +82,20 @@ Thay `openrouter` bằng `openai`, `anthropic` hoặc `gemini` khi dùng provide
 UI của nhóm (`starter_v0/web_ui.py`, `web_ui.html`, `web_compare.html`, `web-ui.js`, `web_ui.css`) dùng đúng vòng xử lý hội thoại và tool của `chat.py` (`run_model_tool_loop`, lịch sử hội thoại, dừng khi `clarify` chờ người dùng), chỉ dùng thư viện chuẩn Python. Làm theo từ đầu trên máy mới (Windows PowerShell):
 
 ```powershell
-git clone https://github.com/Nhatcony0902/K4-L3B-DAY04-PhamLongNhat-2A202602844-Prompt-Engineering-Tool-Calling-Labs.git
-cd K4-L3B-DAY04-PhamLongNhat-2A202602844-Prompt-Engineering-Tool-Calling-Labs\starter_v0
+git clone https://github.com/Nhatcony0902/K4-L3-DAY04-PhamLongNhat-2A202602844-PromptEngineeringToolCalling.git
+cd K4-L3-DAY04-PhamLongNhat-2A202602844-PromptEngineeringToolCalling\starter_v0
 py -3 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt
 Copy-Item .env.example .env        # rồi điền OPENROUTER_API_KEY=sk-or-v1-... vào .env
-python web_ui.py --provider openrouter --version v4
+python web_ui.py --provider openrouter --version v5
 ```
 
-Terminal in `Helpdesk web UI: http://127.0.0.1:8765/  artifact_version=v4+p…+t…` và `Compare versions: http://127.0.0.1:8765/compare  (v0, v1, v2, v3)` và tự mở trình duyệt; nếu không, mở link đó thủ công. Nếu thiếu key, terminal và đầu trang UI báo `WARNING`/"Thiếu OPENROUTER_API_KEY".
+Terminal in `Helpdesk web UI: http://127.0.0.1:8765/  artifact_version=v5+p…+t…` và `Compare versions: http://127.0.0.1:8765/compare  (v0, …, v5)` và tự mở trình duyệt; nếu không, mở link đó thủ công. Nếu thiếu key, terminal và đầu trang UI báo `WARNING`/"Thiếu OPENROUTER_API_KEY".
 
 Trang chat `/`:
 
-- Đầu trang: artifact version đang chạy (`v4+p<prompt_hash>+t<tools_hash>`), provider/model, đường dẫn transcript.
+- Đầu trang: artifact version đang chạy (`v5+p<prompt_hash>+t<tools_hash>`), provider/model, đường dẫn transcript.
 - Mỗi lượt: trạng thái (`answered`, `waiting_for_user`, `provider_error`), version, số tool call; từng tool call ghi `round · tên_tool(args)`, bấm để xem **input** và **result**; tool lỗi viền đỏ, tự mở và ghi `error: <mã lỗi>`.
 - Transcript tự lưu sau mỗi lượt vào `starter_v0/transcripts/ui_*.transcript.json`; nút "Phiên mới" bắt đầu transcript mới.
 
@@ -112,8 +112,8 @@ Tùy chọn: `--port 8766` khi cổng 8765 bận, `--no-browser` để không t�
 Tool tự xây `request_account_unlock` (`starter_v0/tools/request_account_unlock/`, dữ liệu `helpdesk_data/account_unlock_rules.json`): tạo hồ sơ mở khóa **chờ xác minh** cho tài khoản `locked`, không đổi `users.json`, bắt buộc xác nhận, chỉ nhận phương thức xác minh đã duyệt và từ chối mật khẩu/mã MFA/OTP. Hồ sơ ghi vào `starter_v0/unlock_requests/` (gitignored). Kiểm thử từ `starter_v0/`:
 
 ```powershell
-python -m unittest tests.test_request_account_unlock
-python run_eval.py --provider openrouter --version v4 --suite extension --eval-cases data/eval_bonus.json
+python -m unittest tests.test_request_account_unlock tests.test_confirmation_guard
+python run_eval.py --provider openrouter --version v5 --suite extension --eval-cases data/eval_bonus.json
 ```
 
 ## Tài liệu cần đọc
