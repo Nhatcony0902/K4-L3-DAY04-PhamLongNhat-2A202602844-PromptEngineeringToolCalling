@@ -62,7 +62,22 @@ total_cases`, và tool result error đã được review thủ công.
 | v0 | baseline | — | case_accuracy (routing / args / multiturn) | — | 0.70 (0.767 / 0.70 / 0.80) | [runs/v0_B_base_openrouter_20260915T182426033389.json](../runs/v0_B_base_openrouter_20260915T182426033389.json) |
 | v1 | `system_prompt.md`: thêm mục *Write actions and confirmation* | Model bỏ qua boundary vì prompt không nói `create_ticket` là write action | case_accuracy (routing / args / multiturn) | 0.70 (0.767 / 0.70 / 0.80) | 0.767 (0.867 / 0.767 / 0.90) | [runs/v1_B_base_openrouter_20260915T183331734497.json](../runs/v1_B_base_openrouter_20260915T183331734497.json) |
 | v2 | `system_prompt.md`: thêm mục *Missing or ambiguous information* | Model đoán ID/enum vì prompt không cấm và không chỉ cách hỏi lại | case_accuracy (routing / args / multiturn) | 0.767 (0.867 / 0.767 / 0.90) | 0.867 (0.933 / 0.867 / 0.90) | [runs/v2_B_base_openrouter_20260915T184128652929.json](../runs/v2_B_base_openrouter_20260915T184128652929.json) |
-| v3 |  |  |  |  |  |  |
+| v3 | `tools.yaml`: làm rõ mô tả `inspect_device`, `lookup_user`, `search_kb.category`, `check_service_status.environment` (không đổi tên/enum/required) | Lỗi còn lại ở mức argument; prompt chung không sửa được vì mô tả tham số mơ hồ | case_accuracy (routing / args / multiturn) | 0.867 (0.933 / 0.867 / 0.90) | 1.0 (1.0 / 1.0 / 1.0) | [runs/v3_B_base_openrouter_20260915T184605253127.json](../runs/v3_B_base_openrouter_20260915T184605253127.json) |
+
+Tất cả run: OpenRouter / `openai/gpt-4o-mini`, cùng `data/eval_base.json`, `provider_error_cases = 0`, `measured_cases = 30`. Mỗi case mỗi version chạy **1 lần**.
+
+| Case bị ảnh hưởng | v0 | v1 | v2 | v3 |
+|---|---|---|---|---|
+| H12, M05, M09 (xác nhận ticket) | FAIL | PASS | PASS | PASS |
+| H10, H11 (thiếu ID) | FAIL | FAIL | PASS | PASS |
+| H17 (3 nguồn) | FAIL | FAIL | PASS | PASS |
+| M06 (đổi intent) | PASS | **FAIL** | FAIL | PASS |
+| H04, H13, H19 | FAIL | FAIL | FAIL | PASS |
+| 20 case còn lại | PASS | PASS | PASS | PASS |
+
+Review thủ công `tool_results` của v3: không có tool trả `error`, không có `create_ticket` trả `created`, `tickets/` chỉ còn LAB-3AD5AF0C do v0 tạo.
+
+**Giới hạn:** 30/30 là kết quả một lần chạy trên đúng bộ đã dùng để tìm lỗi, nên có rủi ro overfit — đặc biệt mô tả `environment` có liệt kê ví dụ "demo". Cần kiểm chứng trên bộ group 10 case và adversarial 12 case; M06/H17 đổi kết quả giữa các version mà không bị nhắm tới cho thấy model có dao động giữa các lần chạy.
 
 ## B2. Failure analysis
 
@@ -75,11 +90,11 @@ v0 (21/30 PASS, `provider_error_cases = 0`, `measured_cases = 30`). 9 case fail:
 | M09_confirmation_invalidated | wrong_boundary | `inspect_device(LT-240, all)` | Payload đổi (critical + nội dung mới) nhưng không hỏi xác nhận lại, gọi tool không liên quan | v1 PASS: `clarify(yes_no)` với payload mới (critical, nghi mất dữ liệu) |
 | H10_missing_asset | missing_info | `inspect_device(asset_id="laptop", check=network)` | Dùng chữ "laptop" làm asset ID → `asset_not_found` | v2 PASS: `clarify(text)` hỏi mã tài sản |
 | H11_missing_employee | missing_info | `lookup_user(employee_id="Sales")` | Dùng tên phòng ban làm employee ID → `employee_not_found` | v2 PASS: `clarify(text)` hỏi employee ID |
-| H19_ambiguous_environment | missing_info | `check_service_status(email, staging)` | Tự map "demo" → staging thay vì hỏi production/staging | v2 vẫn FAIL, trace giống hệt v0: quy tắc enum trong prompt chưa đủ, model vẫn coi "demo" là staging → thử ở mô tả `environment` trong `tools.yaml` (v3) |
-| H04_user_routing | wrong_tool | `lookup_user(EMP-1003)` + `inspect_device(asset_id="EMP-1003")` | Truyền employee ID vào asset_id → `asset_not_found` | v2 vẫn FAIL, trace giống hệt: `lookup_user` đã trả `assigned_assets: ["DT-031"]` nhưng model vẫn gọi `inspect_device("EMP-1003")` → thử ở mô tả `inspect_device.asset_id` / `lookup_user` (v3) |
-| H13_parallel_status_and_device | wrong_tool (arg) | `inspect_device(LT-204)` thiếu `check` | Sự cố VPN nhưng không đặt `check=vpn` | v2 vẫn FAIL → v3 |
+| H19_ambiguous_environment | missing_info | `check_service_status(email, staging)` | Tự map "demo" → staging thay vì hỏi production/staging | v2 vẫn FAIL, trace giống hệt v0: quy tắc enum trong prompt chưa đủ, model vẫn coi "demo" là staging → thử ở mô tả `environment` trong `tools.yaml` (v3). v3 PASS: `clarify(choice, [production, staging])` |
+| H04_user_routing | wrong_tool | `lookup_user(EMP-1003)` + `inspect_device(asset_id="EMP-1003")` | Truyền employee ID vào asset_id → `asset_not_found` | v2 vẫn FAIL, trace giống hệt: `lookup_user` đã trả `assigned_assets: ["DT-031"]` nhưng model vẫn gọi `inspect_device("EMP-1003")` → thử ở mô tả `inspect_device.asset_id` / `lookup_user` (v3). v3 PASS: chỉ `lookup_user(EMP-1003)` |
+| H13_parallel_status_and_device | wrong_tool (arg) | `inspect_device(LT-204)` thiếu `check` | Sự cố VPN nhưng không đặt `check=vpn` | v2 vẫn FAIL → v3 PASS: `inspect_device(LT-204, check=vpn)` |
 | H17_triage_with_three_sources | wrong_tool (arg) | `inspect_device(LT-318, check=all)` | Chọn đúng 3 tool nhưng `check=all` thay vì `vpn` | v2 PASS (`check=vpn`) dù v2 không nhắm tới case này; chưa rõ do prompt hay biến động của model, cần xem lại ở v3 |
-| M06_switch_tool (**regression ở v1**) | wrong_tool (arg) | v1: `search_kb(query="Wi-Fi", category=all)` | v0 PASS với `category=wifi`; v1 đúng tool, đúng intent mới, nhưng chọn `category=all`. Thay đổi v1 không đụng tới search, nên nghi do model chọn enum không ổn định khi mô tả `category` mơ hồ (chưa chứng minh) | Dự kiến v3 (`tools.yaml`) |
+| M06_switch_tool (**regression ở v1**) | wrong_tool (arg) | v1: `search_kb(query="Wi-Fi", category=all)` | v0 PASS với `category=wifi`; v1 đúng tool, đúng intent mới, nhưng chọn `category=all`. Thay đổi v1 không đụng tới search, nên nghi do model chọn enum không ổn định khi mô tả `category` mơ hồ (chưa chứng minh) | v3 PASS sau khi mô tả `search_kb.category` yêu cầu đặt đúng chủ đề: `category=wifi` |
 
 Phân loại theo nơi sửa: (1) boundary xác nhận — model sai quy tắc hành động, tool `create_ticket` tin cờ `confirmed` do model gửi; (2) đoán thông tin thiếu — model điền giá trị không phải ID/enum hợp lệ, tool trả lỗi đúng; (3) độ chính xác argument — mô tả `inspect_device.check` và định dạng ID trong `tools.yaml` quá mơ hồ. Không có case nào lỗi do code tool trả sai dữ liệu.
 
@@ -128,10 +143,10 @@ nhóm tự xây.
 
 ## B7. Technical reflection
 
-- Fix nào thuộc `system_prompt.md`?
-- Fix nào thuộc `tools.yaml`?
-- Failure nào không thể chỉ nhìn automatic score?
-- Nếu có thêm một vòng, nhóm sẽ thử hypothesis nào?
+- Fix nào thuộc `system_prompt.md`? Quy tắc hành vi áp dụng cho nhiều tool: boundary xác nhận write action (v1: H12, M05, M09) và không đoán thông tin thiếu / hỏi lại bằng `clarify` (v2: H10, H11).
+- Fix nào thuộc `tools.yaml`? Quy ước cho từng tham số: định dạng asset ID vs employee ID, `check` theo sự cố, `category` theo chủ đề, environment ngoài enum → clarify, `lookup_user` đã có `assigned_assets` (v3: H04, H13, H19, M06). H04 và H19 đã có quy tắc tương ứng trong prompt v2 nhưng vẫn fail với trace giống hệt; chỉ pass khi hướng dẫn nằm ngay cạnh tham số.
+- Failure nào không thể chỉ nhìn automatic score? H12 v0: score chỉ báo `wrong_boundary`, nhưng `tool_results` cho thấy ticket LAB-3AD5AF0C đã thực sự được ghi. M05 v0 cũng gọi `create_ticket` nhưng code tool chặn (`needs_confirmation`) — cùng loại lỗi, hậu quả khác. M05 v1 PASS nhưng payload ghi "Mã tài sản: không có" dù LT-204 nằm trong summary.
+- Nếu có thêm một vòng, nhóm sẽ thử hypothesis nào? Chạy lặp v3 nhiều lần để đo độ ổn định (M06/H17 dao động giữa version), bỏ ví dụ cụ thể như "demo" khỏi mô tả `environment` để kiểm tra overfit, và kiểm tra code `create_ticket` không nên tin cờ `confirmed` do model tự gửi.
 
 # PHẦN C — Checkout trước khi nộp
 
