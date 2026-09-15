@@ -36,4 +36,4 @@
   
 - Điều đã học: hiểu về cách mà ai agent gọi tool và xử lí thông tin cũng như các thay đổi trong đoạn hội thoại
 - AI/công cụ đã dùng và cách kiểm tra: Claude Code (Claude Opus 5) hỗ trợ đọc trace JSON, phân loại lỗi, soạn thay đổi prompt/tools và report. Tự kiểm tra: tự chạy mọi run và UI; so `prompt_hash`/`tools_hash` trong run với file đã commit; đọc `tool_results` và thư mục `tickets/`, `unlock_requests/`; chạy unit test; đối chiếu giá trị `check`/`category` kỳ vọng trước khi sửa `tools.yaml`.
-- Thời điểm đã tự nộp URL repo chung trên VLearn: 
+- Thời điểm đã tự nộp URL repo chung trên VLearn: 8h27
