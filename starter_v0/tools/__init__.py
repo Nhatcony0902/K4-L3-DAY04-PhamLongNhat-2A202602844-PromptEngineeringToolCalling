@@ -12,6 +12,7 @@ from .format_incident_report.tool import format_incident_report
 from .inspect_device.tool import inspect_device
 from .lookup_user.tool import lookup_user
 from .policy.tool import search_company_policy
+from .request_account_unlock.tool import request_account_unlock
 from .search_kb.tool import search_kb
 from .search_device_info.tool import search_device_info
 
@@ -30,7 +31,20 @@ TOOL_FUNCTIONS = {
     "format_incident_report": format_incident_report,
     "policy": search_company_policy,
     "create_ticket": create_ticket,
+    # Team-built bonus tool.
+    "request_account_unlock": request_account_unlock,
 }
+
+TOOLS_DIR = Path(__file__).parent
+
+
+def tool_metadata(name: str) -> dict[str, Any]:
+    """Frontmatter of tools/<name>/TOOL.md, or {} when the tool has none."""
+    path = TOOLS_DIR / name / "TOOL.md"
+    if not path.exists():
+        return {}
+    parts = path.read_text(encoding="utf-8").split("---", 2)
+    return (yaml.safe_load(parts[1]) or {}) if len(parts) == 3 else {}
 
 
 def load_tool_declarations(path: Path) -> list[dict[str, Any]]:

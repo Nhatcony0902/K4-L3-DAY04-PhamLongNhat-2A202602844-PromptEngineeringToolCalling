@@ -1,0 +1,16 @@
+{
+  "snapshot_at": "2026-09-14T09:00:00+07:00",
+  "source": "Fictional IT Operations Handbook v1 — account unlock workflow",
+  "unlockable_status": ["locked"],
+  "status_errors": {
+    "active": "account_not_locked",
+    "disabled": "account_disabled_contact_hr",
+    "password_expired": "use_password_reset_workflow"
+  },
+  "verification_methods": {
+    "manager_approval": {"label": "Quản lý trực tiếp phê duyệt qua hệ thống", "sla_hours": 4},
+    "service_desk_callback": {"label": "Service desk gọi lại số điện thoại đã đăng ký", "sla_hours": 2},
+    "in_person_badge": {"label": "Xác minh trực tiếp bằng thẻ nhân viên tại quầy IT", "sla_hours": 1}
+  },
+  "after_submit": "Tài khoản vẫn bị khóa cho tới khi hoàn tất xác minh; yêu cầu chỉ tạo hồ sơ chờ xác minh."
+}

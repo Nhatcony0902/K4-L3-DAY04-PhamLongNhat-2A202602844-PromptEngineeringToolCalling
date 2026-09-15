@@ -105,3 +105,15 @@ tools:
         asset_id: {type: string, default: "", description: "Mã tài sản nếu có"}
         confirmed: {type: boolean, default: false, description: "Đã được người dùng xác nhận"}
       required: [summary]
+
+  # ---------------- Team-built bonus tool ----------------
+  - name: request_account_unlock
+    description: "Gửi yêu cầu mở khóa tài khoản đang bị khóa (write action). Chỉ dùng cho account_status locked; kiểm tra trạng thái bằng lookup_user nếu chưa biết. Không đổi mật khẩu, không mở khóa ngay: tạo hồ sơ chờ xác minh. Phải hỏi xác nhận payload bằng clarify yes_no trước khi đặt confirmed=true."
+    parameters:
+      type: object
+      properties:
+        employee_id: {type: string, description: "Mã nhân viên do người dùng cung cấp, dạng EMP-xxxx."}
+        verification_method: {type: string, enum: [manager_approval, service_desk_callback, in_person_badge], description: "Cách xác minh danh tính đã được phê duyệt. Nếu người dùng chưa nêu, gọi clarify với response_type choice và options là ba giá trị này. Mật khẩu, mã MFA/OTP hay mã khôi phục không bao giờ là cách xác minh."}
+        reason: {type: string, default: "", description: "Mô tả ngắn lý do bị khóa. Không bao giờ chứa mật khẩu, mã MFA/OTP hay mã khôi phục."}
+        confirmed: {type: boolean, default: false, description: "Chỉ true khi lượt mới nhất của người dùng xác nhận rõ ràng đúng payload (employee_id, verification_method, reason)."}
+      required: [employee_id, verification_method]

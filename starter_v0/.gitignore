@@ -7,3 +7,4 @@ __pycache__/
 !.env.example
 /tickets/
 # Commit reviewed runs, transcripts and analysis as submission evidence.
+/unlock_requests/
