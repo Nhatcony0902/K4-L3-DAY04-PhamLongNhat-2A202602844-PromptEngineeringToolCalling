@@ -7,7 +7,7 @@
 - Tên nhóm: Làm cá nhân (1 thành viên)
 - Người đại diện / MSSV: Phạm Long Nhật / 2A202602844
 - Tên repo: `K4-L3-DAY04-PhamLongNhat-2A202602844-PromptEngineeringToolCalling`
-- URL repo, nhánh nộp, commit chốt: https://github.com/Nhatcony0902/K4-L3-DAY04-PhamLongNhat-2A202602844-PromptEngineeringToolCalling · nhánh `main` · commit chốt: _(điền sau commit cuối)_
+- URL repo, nhánh nộp, commit chốt: https://github.com/Nhatcony0902/K4-L3-DAY04-PhamLongNhat-2A202602844-PromptEngineeringToolCalling · nhánh `main` · commit chốt: `c0135c9`
 - Deadline áp dụng và link thông báo đổi hạn nếu có: 23:59 ngày làm lab, Asia/Ho_Chi_Minh (mặc định); chưa có thông báo đổi hạn
 
 ## Thành viên
