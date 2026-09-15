@@ -79,7 +79,7 @@ Thay `openrouter` bằng `openai`, `anthropic` hoặc `gemini` khi dùng provide
 
 ### Chạy UI chat
 
-UI của nhóm (`starter_v0/web_ui.py` + `web_ui.html`) dùng đúng vòng xử lý hội thoại và tool của `chat.py` (`run_model_tool_loop`, lịch sử hội thoại, dừng khi `clarify` chờ người dùng), chỉ dùng thư viện chuẩn Python. Làm theo từ đầu trên máy mới (Windows PowerShell):
+UI của nhóm (`starter_v0/web_ui.py`, `web_ui.html`, `web_compare.html`, `web-ui.js`, `web_ui.css`) dùng đúng vòng xử lý hội thoại và tool của `chat.py` (`run_model_tool_loop`, lịch sử hội thoại, dừng khi `clarify` chờ người dùng), chỉ dùng thư viện chuẩn Python. Làm theo từ đầu trên máy mới (Windows PowerShell):
 
 ```powershell
 git clone https://github.com/Nhatcony0902/K4-L3B-DAY04-PhamLongNhat-2A202602844-Prompt-Engineering-Tool-Calling-Labs.git
@@ -88,18 +88,33 @@ py -3 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt
 Copy-Item .env.example .env        # rồi điền OPENROUTER_API_KEY=sk-or-v1-... vào .env
-python web_ui.py --provider openrouter --version v3
+python web_ui.py --provider openrouter --version v4
 ```
 
-Terminal in `Helpdesk web UI: http://127.0.0.1:8765/  artifact_version=v3+p…+t…` và tự mở trình duyệt; nếu không, mở link đó thủ công. Nếu thiếu key, terminal và đầu trang UI báo `WARNING`/"Thiếu OPENROUTER_API_KEY".
+Terminal in `Helpdesk web UI: http://127.0.0.1:8765/  artifact_version=v4+p…+t…` và `Compare versions: http://127.0.0.1:8765/compare  (v0, v1, v2, v3)` và tự mở trình duyệt; nếu không, mở link đó thủ công. Nếu thiếu key, terminal và đầu trang UI báo `WARNING`/"Thiếu OPENROUTER_API_KEY".
 
-Trên UI:
+Trang chat `/`:
 
-- Đầu trang: artifact version đang chạy (`v3+p<prompt_hash>+t<tools_hash>`), provider/model, đường dẫn transcript.
+- Đầu trang: artifact version đang chạy (`v4+p<prompt_hash>+t<tools_hash>`), provider/model, đường dẫn transcript.
 - Mỗi lượt: trạng thái (`answered`, `waiting_for_user`, `provider_error`), version, số tool call; từng tool call ghi `round · tên_tool(args)`, bấm để xem **input** và **result**; tool lỗi viền đỏ, tự mở và ghi `error: <mã lỗi>`.
 - Transcript tự lưu sau mỗi lượt vào `starter_v0/transcripts/ui_*.transcript.json`; nút "Phiên mới" bắt đầu transcript mới.
 
-Tùy chọn: `--port 8766` khi cổng 8765 bận, `--no-browser` để không tự mở trình duyệt, `--model` để đổi model (giữ mặc định khi so sánh với run v3). Dừng bằng Ctrl+C.
+Trang so sánh `/compare` (link "So sánh v0–v3" trên trang chat):
+
+- Danh sách version đọc từ `artifacts/version_log.csv`; `version_catalog.py` tìm trong lịch sử Git bản `system_prompt.md` và `tools.yaml` có sha256 khớp hash đã log, nên mỗi cột chạy đúng artifact đã tạo ra run tương ứng (hiện commit prompt/tools cạnh mỗi version). Version nào không khớp được sẽ báo lỗi đỏ, không bị bỏ qua âm thầm.
+- Tick version cần so sánh (mặc định tất cả), gõ một tin nhắn: tin nhắn chạy song song trên mọi version, mỗi cột hiện trạng thái, version, tool call, input, kết quả/lỗi. Mỗi cột giữ lịch sử hội thoại riêng; muốn đổi version phải bấm "Phiên mới".
+- An toàn: tool có `side_effect` trong `TOOL.md` được gọi với `confirmed=true` sẽ **không thực thi** mà trả `dry_run_not_executed` (thẻ viền vàng); lời gọi chưa xác nhận vẫn chạy thật để thấy `needs_confirmation`. Transcript lưu vào `starter_v0/transcripts/compare_*.transcript.json`.
+
+Tùy chọn: `--port 8766` khi cổng 8765 bận, `--no-browser` để không tự mở trình duyệt, `--model` để đổi model (giữ mặc định khi so sánh với các run). Dừng bằng Ctrl+C.
+
+### Chức năng mở rộng: yêu cầu mở khóa tài khoản
+
+Tool tự xây `request_account_unlock` (`starter_v0/tools/request_account_unlock/`, dữ liệu `helpdesk_data/account_unlock_rules.json`): tạo hồ sơ mở khóa **chờ xác minh** cho tài khoản `locked`, không đổi `users.json`, bắt buộc xác nhận, chỉ nhận phương thức xác minh đã duyệt và từ chối mật khẩu/mã MFA/OTP. Hồ sơ ghi vào `starter_v0/unlock_requests/` (gitignored). Kiểm thử từ `starter_v0/`:
+
+```powershell
+python -m unittest tests.test_request_account_unlock
+python run_eval.py --provider openrouter --version v4 --suite extension --eval-cases data/eval_bonus.json
+```
 
 ## Tài liệu cần đọc
 

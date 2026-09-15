@@ -4,44 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Northstar Helpdesk Agent</title>
-<style>
-  :root { --bg:#f6f7f9; --card:#fff; --line:#dfe3e8; --text:#1d2430; --muted:#667085;
-          --accent:#2457c5; --ok:#1f7a4d; --warn:#9a6700; --err:#b42318; }
-  * { box-sizing:border-box; }
-  body { margin:0; font:14px/1.5 system-ui, sans-serif; background:var(--bg); color:var(--text); }
-  header { position:sticky; top:0; background:var(--card); border-bottom:1px solid var(--line);
-           padding:10px 16px; display:flex; flex-wrap:wrap; gap:8px 16px; align-items:center; z-index:1; }
-  header h1 { font-size:16px; margin:0; }
-  .meta { color:var(--muted); font-size:12px; display:flex; flex-wrap:wrap; gap:4px 12px; }
-  .meta code { color:var(--text); }
-  header button { margin-left:auto; }
-  main { max-width:900px; margin:0 auto; padding:16px 16px 120px; }
-  .turn { margin-bottom:18px; }
-  .user { background:var(--accent); color:#fff; padding:8px 12px; border-radius:10px; margin-left:auto;
-          max-width:80%; width:fit-content; white-space:pre-wrap; }
-  .agent { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:10px 12px; margin-top:8px; }
-  .badges { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:6px; font-size:12px; }
-  .badge { border:1px solid var(--line); border-radius:999px; padding:0 8px; color:var(--muted); }
-  .st-answered { color:var(--ok); border-color:var(--ok); }
-  .st-waiting_for_user { color:var(--warn); border-color:var(--warn); }
-  .st-provider_error, .st-max_tool_rounds { color:var(--err); border-color:var(--err); }
-  .reply { white-space:pre-wrap; }
-  .tool { border:1px solid var(--line); border-left:4px solid var(--accent); border-radius:6px; margin:8px 0; }
-  .tool.has-error { border-left-color:var(--err); }
-  .tool summary { cursor:pointer; padding:6px 10px; font-family:ui-monospace, monospace; font-size:13px; }
-  .tool .label { font-size:11px; text-transform:uppercase; color:var(--muted); margin:6px 10px 2px; }
-  .tool .err { color:var(--err); font-weight:600; }
-  pre { margin:0 10px 8px; padding:8px; background:#f2f4f7; border-radius:4px; overflow-x:auto;
-        font-size:12px; white-space:pre-wrap; word-break:break-word; }
-  .error { color:var(--err); white-space:pre-wrap; }
-  form { position:fixed; bottom:0; left:0; right:0; background:var(--card); border-top:1px solid var(--line);
-         padding:10px 16px calc(10px + env(safe-area-inset-bottom, 0px)); }
-  .row { max-width:900px; margin:0 auto; display:flex; gap:8px; }
-  textarea { flex:1; resize:none; font:inherit; padding:8px; border:1px solid var(--line); border-radius:8px; min-height:44px; }
-  button { font:inherit; padding:8px 14px; border-radius:8px; border:1px solid var(--line); background:var(--card); cursor:pointer; }
-  button.primary { background:var(--accent); color:#fff; border-color:var(--accent); }
-  button:disabled { opacity:.5; cursor:wait; }
-</style>
+<link rel="stylesheet" href="/web_ui.css">
 </head>
 <body>
 <header>
@@ -51,7 +14,10 @@
     <span>model <code id="model">…</code></span>
     <span>transcript <code id="transcript">…</code></span>
   </div>
-  <button id="reset" type="button">Phiên mới</button>
+  <nav>
+    <a href="/compare">So sánh v0–v3</a>
+    <button id="reset" type="button">Phiên mới</button>
+  </nav>
   <div id="keywarn" class="error" hidden></div>
 </header>
 <main id="log"></main>
@@ -61,47 +27,16 @@
     <button class="primary" id="send" type="submit">Gửi</button>
   </div>
 </form>
+<script src="/web-ui.js"></script>
 <script>
-const $ = (id) => document.getElementById(id);
-const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; };
-const pretty = (v) => JSON.stringify(v, null, 2);
-
 function setInfo(info) {
   $("version").textContent = info.artifact_version;
   $("model").textContent = `${info.provider} / ${info.model}`;
   $("transcript").textContent = info.transcript;
-  $("keywarn").hidden = info.api_key_present;
-  $("keywarn").textContent = `Thiếu ${info.api_key_env} trong starter_v0/.env — mọi lượt sẽ báo provider_error.`;
-}
-let currentVersion = "";
-
-function toolCard(round, event) {
-  const result = event.result || {};
-  const errorCode = result.error || event.error;
-  const card = el("details", "tool" + (errorCode ? " has-error" : ""));
-  const summary = el("summary", null, `round ${round} · ${event.tool}(${Object.keys(event.args || {}).join(", ")})`);
-  if (errorCode) summary.append(" ", el("span", "err", `error: ${errorCode}`));
-  else if (result.status) summary.append(" → " + result.status);
-  card.append(summary, el("div", "label", "input"), el("pre", null, pretty(event.args || {})),
-              el("div", "label", errorCode ? "error" : "result"), el("pre", null, pretty(result)));
-  if (errorCode) card.open = true;
-  return card;
+  showKeyWarning(info);
 }
 
-function renderTurn(turn, box) {
-  box.replaceChildren();
-  const badges = el("div", "badges");
-  badges.append(el("span", "badge st-" + turn.status, turn.status));
-  badges.append(el("span", "badge", currentVersion));
-  const calls = (turn.rounds || []).reduce((n, r) => n + (r.tool_calls || []).length, 0);
-  badges.append(el("span", "badge", `${calls} tool call(s)`));
-  box.append(badges);
-  (turn.rounds || []).forEach((r) => (r.tool_results || []).forEach((ev) => box.append(toolCard(r.round, ev))));
-  if (turn.error) box.append(el("div", "error", turn.error));
-  if (turn.assistant_text) box.append(el("div", "reply", turn.assistant_text));
-}
-
-async function send(text) {
+bindComposer(async (text) => {
   const wrap = el("div", "turn");
   const box = el("div", "agent", "Đang xử lý…");
   wrap.append(el("div", "user", text), box);
@@ -109,11 +44,8 @@ async function send(text) {
   wrap.scrollIntoView({ block: "end" });
   $("send").disabled = true;
   try {
-    const res = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message: text }) });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || res.status);
+    const data = await api("/api/chat", { message: text });
     setInfo(data.info);
-    currentVersion = data.info.artifact_version;
     renderTurn(data.turn, box);
   } catch (err) {
     box.replaceChildren(el("div", "error", "UI/HTTP error: " + err.message));
@@ -121,24 +53,14 @@ async function send(text) {
     $("send").disabled = false;
     wrap.scrollIntoView({ block: "end" });
   }
-}
+});
 
-$("form").addEventListener("submit", (e) => {
-  e.preventDefault();
-  const text = $("msg").value.trim();
-  if (!text || $("send").disabled) return;
-  $("msg").value = "";
-  send(text);
-});
-$("msg").addEventListener("keydown", (e) => {
-  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); $("form").requestSubmit(); }
-});
 $("reset").addEventListener("click", async () => {
-  const data = await (await fetch("/api/reset", { method: "POST", body: "{}" })).json();
+  const data = await api("/api/reset", {});
   $("log").replaceChildren();
   setInfo(data.info);
 });
-fetch("/api/info").then((r) => r.json()).then(setInfo);
+api("/api/info").then(setInfo);
 </script>
 </body>
 </html>

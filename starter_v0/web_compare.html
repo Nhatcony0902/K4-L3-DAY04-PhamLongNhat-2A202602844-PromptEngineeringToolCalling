@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Helpdesk Version Compare</title>
+<link rel="stylesheet" href="/web_ui.css">
+</head>
+<body>
+<header>
+  <h1>So sánh version</h1>
+  <div class="meta">
+    <span>model <code id="model">…</code></span>
+    <span>transcript <code id="transcript">…</code></span>
+  </div>
+  <nav>
+    <a href="/">Chat</a>
+    <button id="reset" type="button">Phiên mới</button>
+  </nav>
+  <div class="picker" id="picker"></div>
+  <div class="note">Mỗi tin nhắn chạy song song trên prompt + tools của từng version lấy từ Git (khớp hash trong version_log.csv). Mỗi cột giữ lịch sử riêng. Hành động ghi đã xác nhận chỉ chạy thử (dry_run), không tạo file.</div>
+  <div id="keywarn" class="error" hidden></div>
+  <div id="catalogerr" class="error"></div>
+</header>
+<main id="log" class="wide"></main>
+<form id="form">
+  <div class="row">
+    <textarea id="msg" placeholder="Một tin nhắn gửi cho mọi version đã chọn" rows="1"></textarea>
+    <button class="primary" id="send" type="submit">Gửi</button>
+  </div>
+</form>
+<script src="/web-ui.js"></script>
+<script>
+let started = false;
+
+function setInfo(info) {
+  $("model").textContent = `${info.provider} / ${info.model}`;
+  $("transcript").textContent = info.compare_transcript;
+  showKeyWarning(info);
+}
+
+function renderPicker(data) {
+  $("picker").replaceChildren(...data.versions.map((v) => {
+    const label = el("label", null);
+    const box = el("input");
+    box.type = "checkbox"; box.value = v.version; box.checked = v.selected; box.disabled = started;
+    label.append(box, ` ${v.artifact_version} `, el("span", "note", `(prompt ${v.prompt_commit}, tools ${v.tools_commit})`));
+    return label;
+  }));
+  $("catalogerr").textContent = (data.errors || []).join("\n");
+}
+
+const selected = () => [...document.querySelectorAll("#picker input:checked")].map((b) => b.value);
+
+async function resetSession() {
+  started = false;
+  const data = await api("/api/compare/reset", { versions: selected() });
+  $("log").replaceChildren();
+  setInfo(data.info);
+  renderPicker(data);
+}
+
+bindComposer(async (text) => {
+  const names = selected();
+  if (!names.length) { alert("Chọn ít nhất một version."); return; }
+  if (!started) {
+    await api("/api/compare/reset", { versions: names });
+    started = true;
+    document.querySelectorAll("#picker input").forEach((b) => { b.disabled = true; });
+  }
+  const wrap = el("div", "turn");
+  const grid = el("div", "grid");
+  const boxes = {};
+  names.forEach((name) => {
+    const col = el("div", "agent");
+    col.append(el("h3", null, name), (boxes[name] = el("div", null, "Đang xử lý…")));
+    grid.append(col);
+  });
+  wrap.append(el("div", "user", text), grid);
+  $("log").append(wrap);
+  wrap.scrollIntoView({ block: "end" });
+  $("send").disabled = true;
+  try {
+    const data = await api("/api/compare", { message: text });
+    setInfo(data.info);
+    names.forEach((name) => data.results[name] ? renderTurn(data.results[name], boxes[name]) : boxes[name].replaceChildren(el("div", "error", "Không có kết quả")));
+  } catch (err) {
+    names.forEach((name) => boxes[name].replaceChildren(el("div", "error", "UI/HTTP error: " + err.message)));
+  } finally {
+    $("send").disabled = false;
+    wrap.scrollIntoView({ block: "end" });
+  }
+});
+
+$("reset").addEventListener("click", resetSession);
+Promise.all([api("/api/info"), api("/api/versions")]).then(([info, versions]) => { setInfo(info); renderPicker(versions); });
+</script>
+</body>
+</html>
