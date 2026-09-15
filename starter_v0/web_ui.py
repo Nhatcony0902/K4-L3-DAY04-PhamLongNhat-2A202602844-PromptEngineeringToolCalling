@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import threading
 import webbrowser
 from datetime import datetime
@@ -62,11 +63,17 @@ class ChatSession:
             "turns": [],
         }
 
+    def key_env(self) -> str | None:
+        return getattr(self.provider, "api_key_env", None)
+
     def info(self) -> dict[str, Any]:
+        key_env = self.key_env()
         return {
             "artifact_version": self.version.artifact_version,
             "provider": self.args.provider,
             "model": self.model,
+            "api_key_env": key_env,
+            "api_key_present": bool(key_env and os.getenv(key_env)),
             "transcript": str(self.path.relative_to(ROOT)) if self.path.is_relative_to(ROOT) else str(self.path),
         }
 
@@ -167,8 +174,13 @@ def main() -> None:
 
     session = ChatSession(args)
     url = f"http://127.0.0.1:{args.port}/"
-    server = ThreadingHTTPServer(("127.0.0.1", args.port), make_handler(session))
+    try:
+        server = ThreadingHTTPServer(("127.0.0.1", args.port), make_handler(session))
+    except OSError as exc:
+        raise SystemExit(f"Cannot listen on port {args.port} ({exc}). Try --port 8766.") from exc
     print(f"Helpdesk web UI: {url}  artifact_version={session.version.artifact_version}")
+    if not session.info()["api_key_present"]:
+        print(f"WARNING: {session.key_env()} is not set in starter_v0/.env; every turn will show provider_error.")
     print("Press Ctrl+C to stop.")
     if not args.no_browser:
         webbrowser.open(url)

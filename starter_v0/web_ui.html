@@ -52,6 +52,7 @@
     <span>transcript <code id="transcript">…</code></span>
   </div>
   <button id="reset" type="button">Phiên mới</button>
+  <div id="keywarn" class="error" hidden></div>
 </header>
 <main id="log"></main>
 <form id="form">
@@ -69,7 +70,10 @@ function setInfo(info) {
   $("version").textContent = info.artifact_version;
   $("model").textContent = `${info.provider} / ${info.model}`;
   $("transcript").textContent = info.transcript;
+  $("keywarn").hidden = info.api_key_present;
+  $("keywarn").textContent = `Thiếu ${info.api_key_env} trong starter_v0/.env — mọi lượt sẽ báo provider_error.`;
 }
+let currentVersion = "";
 
 function toolCard(round, event) {
   const result = event.result || {};
@@ -88,6 +92,7 @@ function renderTurn(turn, box) {
   box.replaceChildren();
   const badges = el("div", "badges");
   badges.append(el("span", "badge st-" + turn.status, turn.status));
+  badges.append(el("span", "badge", currentVersion));
   const calls = (turn.rounds || []).reduce((n, r) => n + (r.tool_calls || []).length, 0);
   badges.append(el("span", "badge", `${calls} tool call(s)`));
   box.append(badges);
@@ -107,8 +112,9 @@ async function send(text) {
     const res = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message: text }) });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || res.status);
-    renderTurn(data.turn, box);
     setInfo(data.info);
+    currentVersion = data.info.artifact_version;
+    renderTurn(data.turn, box);
   } catch (err) {
     box.replaceChildren(el("div", "error", "UI/HTTP error: " + err.message));
   } finally {

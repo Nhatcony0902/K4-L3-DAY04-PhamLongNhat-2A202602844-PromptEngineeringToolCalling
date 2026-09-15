@@ -79,13 +79,27 @@ Thay `openrouter` bằng `openai`, `anthropic` hoặc `gemini` khi dùng provide
 
 ### Chạy UI chat
 
-Web UI chỉ dùng thư viện chuẩn Python, không cần cài thêm. Từ `starter_v0/`:
+UI của nhóm (`starter_v0/web_ui.py` + `web_ui.html`) dùng đúng vòng xử lý hội thoại và tool của `chat.py` (`run_model_tool_loop`, lịch sử hội thoại, dừng khi `clarify` chờ người dùng), chỉ dùng thư viện chuẩn Python. Làm theo từ đầu trên máy mới (Windows PowerShell):
 
 ```powershell
+git clone https://github.com/Nhatcony0902/K4-L3B-DAY04-PhamLongNhat-2A202602844-Prompt-Engineering-Tool-Calling-Labs.git
+cd K4-L3B-DAY04-PhamLongNhat-2A202602844-Prompt-Engineering-Tool-Calling-Labs\starter_v0
+py -3 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+Copy-Item .env.example .env        # rồi điền OPENROUTER_API_KEY=sk-or-v1-... vào .env
 python web_ui.py --provider openrouter --version v3
 ```
 
-Trình duyệt mở `http://127.0.0.1:8765/`. Mỗi lượt hiển thị version artifact, trạng thái (`answered`, `waiting_for_user`, `provider_error`), từng tool call với input và kết quả hoặc lỗi. Transcript tự lưu vào `starter_v0/transcripts/ui_*.transcript.json`; nút "Phiên mới" bắt đầu transcript mới. Dùng `--port` để đổi cổng, `--no-browser` để không tự mở trình duyệt.
+Terminal in `Helpdesk web UI: http://127.0.0.1:8765/  artifact_version=v3+p…+t…` và tự mở trình duyệt; nếu không, mở link đó thủ công. Nếu thiếu key, terminal và đầu trang UI báo `WARNING`/"Thiếu OPENROUTER_API_KEY".
+
+Trên UI:
+
+- Đầu trang: artifact version đang chạy (`v3+p<prompt_hash>+t<tools_hash>`), provider/model, đường dẫn transcript.
+- Mỗi lượt: trạng thái (`answered`, `waiting_for_user`, `provider_error`), version, số tool call; từng tool call ghi `round · tên_tool(args)`, bấm để xem **input** và **result**; tool lỗi viền đỏ, tự mở và ghi `error: <mã lỗi>`.
+- Transcript tự lưu sau mỗi lượt vào `starter_v0/transcripts/ui_*.transcript.json`; nút "Phiên mới" bắt đầu transcript mới.
+
+Tùy chọn: `--port 8766` khi cổng 8765 bận, `--no-browser` để không tự mở trình duyệt, `--model` để đổi model (giữ mặc định khi so sánh với run v3). Dừng bằng Ctrl+C.
 
 ## Tài liệu cần đọc
 
