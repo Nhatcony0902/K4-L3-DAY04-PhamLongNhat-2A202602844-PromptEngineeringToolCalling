@@ -77,6 +77,16 @@ python run_eval.py --provider openrouter --version v0 --suite base --eval-cases 
 
 Thay `openrouter` bằng `openai`, `anthropic` hoặc `gemini` khi dùng provider khác. Không commit `.env`.
 
+### Chạy UI chat
+
+Web UI chỉ dùng thư viện chuẩn Python, không cần cài thêm. Từ `starter_v0/`:
+
+```powershell
+python web_ui.py --provider openrouter --version v3
+```
+
+Trình duyệt mở `http://127.0.0.1:8765/`. Mỗi lượt hiển thị version artifact, trạng thái (`answered`, `waiting_for_user`, `provider_error`), từng tool call với input và kết quả hoặc lỗi. Transcript tự lưu vào `starter_v0/transcripts/ui_*.transcript.json`; nút "Phiên mới" bắt đầu transcript mới. Dùng `--port` để đổi cổng, `--no-browser` để không tự mở trình duyệt.
+
 ## Tài liệu cần đọc
 
 | File | Dùng khi |
