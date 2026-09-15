@@ -9,9 +9,9 @@
 
 ## Team
 
-- Team:
+- Team: làm cá nhân
 - Thành viên và INDIVIDUAL: [TEAM.md](../../TEAM.md)
-- Members:
+- Members: Phạm Long Nhật — 2A202602844 (GitHub `Nhatcony0902`)
 - Provider/model: OpenRouter / `openai/gpt-4o-mini` (mặc định của starter, giữ nguyên cho v0–v3)
 
 # PHẦN A — Giới thiệu agent
@@ -63,6 +63,17 @@ total_cases`, và tool result error đã được review thủ công.
 | v1 | `system_prompt.md`: thêm mục *Write actions and confirmation* | Model bỏ qua boundary vì prompt không nói `create_ticket` là write action | case_accuracy (routing / args / multiturn) | 0.70 (0.767 / 0.70 / 0.80) | 0.767 (0.867 / 0.767 / 0.90) | [runs/v1_B_base_openrouter_20260915T183331734497.json](../runs/v1_B_base_openrouter_20260915T183331734497.json) |
 | v2 | `system_prompt.md`: thêm mục *Missing or ambiguous information* | Model đoán ID/enum vì prompt không cấm và không chỉ cách hỏi lại | case_accuracy (routing / args / multiturn) | 0.767 (0.867 / 0.767 / 0.90) | 0.867 (0.933 / 0.867 / 0.90) | [runs/v2_B_base_openrouter_20260915T184128652929.json](../runs/v2_B_base_openrouter_20260915T184128652929.json) |
 | v3 | `tools.yaml`: làm rõ mô tả `inspect_device`, `lookup_user`, `search_kb.category`, `check_service_status.environment` (không đổi tên/enum/required) | Lỗi còn lại ở mức argument; prompt chung không sửa được vì mô tả tham số mơ hồ | case_accuracy (routing / args / multiturn) | 0.867 (0.933 / 0.867 / 0.90) | 1.0 (1.0 / 1.0 / 1.0) | [runs/v3_B_base_openrouter_20260915T184605253127.json](../runs/v3_B_base_openrouter_20260915T184605253127.json) |
+
+Commit cho từng phiên bản (artifact và evidence tách riêng):
+
+| Version | Commit artifact | Commit run/log/report |
+|---|---|---|
+| v0 | baseline starter [`311580e`](https://github.com/Nhatcony0902/K4-L3B-DAY04-PhamLongNhat-2A202602844-Prompt-Engineering-Tool-Calling-Labs/commit/311580e) | [`3cc92c1`](https://github.com/Nhatcony0902/K4-L3B-DAY04-PhamLongNhat-2A202602844-Prompt-Engineering-Tool-Calling-Labs/commit/3cc92c1) |
+| v1 | [`66fe80e`](https://github.com/Nhatcony0902/K4-L3B-DAY04-PhamLongNhat-2A202602844-Prompt-Engineering-Tool-Calling-Labs/commit/66fe80e) (prompt + run v1 cùng commit) | [`66fe80e`](https://github.com/Nhatcony0902/K4-L3B-DAY04-PhamLongNhat-2A202602844-Prompt-Engineering-Tool-Calling-Labs/commit/66fe80e) |
+| v2 | [`37956c2`](https://github.com/Nhatcony0902/K4-L3B-DAY04-PhamLongNhat-2A202602844-Prompt-Engineering-Tool-Calling-Labs/commit/37956c2) | [`1d344fa`](https://github.com/Nhatcony0902/K4-L3B-DAY04-PhamLongNhat-2A202602844-Prompt-Engineering-Tool-Calling-Labs/commit/1d344fa) |
+| v3 | [`41e30bd`](https://github.com/Nhatcony0902/K4-L3B-DAY04-PhamLongNhat-2A202602844-Prompt-Engineering-Tool-Calling-Labs/commit/41e30bd) | [`26d69f0`](https://github.com/Nhatcony0902/K4-L3B-DAY04-PhamLongNhat-2A202602844-Prompt-Engineering-Tool-Calling-Labs/commit/26d69f0) |
+
+Hash trong mỗi run khớp nội dung file tại commit artifact tương ứng (prompt `27467914bc4d` → `1a5264de4444` → `e445830ef622`; tools `d4848549884e` → `6e8a7d0f59b4` ở v3). Xem diff: `git diff 311580e 41e30bd -- starter_v0/artifacts/`.
 
 Tất cả run: OpenRouter / `openai/gpt-4o-mini`, cùng `data/eval_base.json`, `provider_error_cases = 0`, `measured_cases = 30`. Mỗi case mỗi version chạy **1 lần**.
 
