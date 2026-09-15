@@ -18,12 +18,12 @@ tools:
       required: [question]
 
   - name: search_kb
-    description: "Tìm hướng dẫn hỗ trợ kỹ thuật."
+    description: "Tìm bài hướng dẫn khắc phục trong knowledge base nội bộ."
     parameters:
       type: object
       properties:
-        query: {type: string, default: "", description: "Nội dung cần tìm"}
-        category: {type: string, enum: [all, vpn, email, wifi, printing, account, security, hardware, software, meeting_room], default: "all", description: "Nhóm hướng dẫn"}
+        query: {type: string, default: "", description: "Nội dung cần tìm, có thể gồm hệ điều hành hoặc triệu chứng"}
+        category: {type: string, enum: [all, vpn, email, wifi, printing, account, security, hardware, software, meeting_room], default: "all", description: "Nhóm hướng dẫn. Khi yêu cầu nói tới một chủ đề cụ thể (VPN, Wi-Fi, email, máy in...), đặt đúng nhóm đó; chỉ dùng all khi không xác định được chủ đề."}
         top_k: {type: integer, default: 3, description: "Số kết quả"}
       required: [query]
 
@@ -33,24 +33,24 @@ tools:
       type: object
       properties:
         service: {type: string, enum: [vpn, email, sso, wifi, printing], description: "Tên dịch vụ"}
-        environment: {type: string, enum: [production, staging], default: "production", description: "Môi trường"}
+        environment: {type: string, enum: [production, staging], default: "production", description: "Môi trường. Chỉ có production và staging. Nếu người dùng nêu một môi trường khác (demo, test, dev, QA...), không tự quy đổi: gọi clarify với response_type choice và options [production, staging]."}
       required: [service]
 
   - name: inspect_device
-    description: "Kiểm tra thông tin và chẩn đoán thiết bị."
+    description: "Kiểm tra thông tin và chẩn đoán một thiết bị cụ thể theo asset ID."
     parameters:
       type: object
       properties:
-        asset_id: {type: string, description: "Mã tài sản"}
-        check: {type: string, enum: [all, network, vpn, security, hardware, software], default: "all", description: "Nhóm kiểm tra"}
+        asset_id: {type: string, description: "Mã tài sản do người dùng cung cấp, dạng tiền tố thiết bị + số (ví dụ LT-204, DT-031). Không bao giờ truyền employee ID (EMP-...), tên, phòng ban hay từ chung như 'laptop'."}
+        check: {type: string, enum: [all, network, vpn, security, hardware, software], default: "all", description: "Nhóm kiểm tra khớp với sự cố được nêu: VPN → vpn, Wi-Fi/mạng → network, mã hóa/bảo mật → security, ổ đĩa/pin → hardware, ứng dụng/driver → software. Chỉ dùng all khi không nêu sự cố cụ thể."}
       required: [asset_id]
 
   - name: lookup_user
-    description: "Tra cứu người dùng trong danh bạ hỗ trợ."
+    description: "Tra cứu tài khoản nhân viên trong danh bạ hỗ trợ; kết quả đã gồm trạng thái tài khoản, MFA và danh sách thiết bị được cấp (assigned_assets). Dùng tool này khi hỏi về thiết bị được cấp của một nhân viên, không cần gọi inspect_device."
     parameters:
       type: object
       properties:
-        employee_id: {type: string, description: "Mã nhân viên"}
+        employee_id: {type: string, description: "Mã nhân viên do người dùng cung cấp, dạng EMP-xxxx. Không truyền tên, phòng ban hay asset ID."}
       required: [employee_id]
 
   - name: format_incident_report
