@@ -113,9 +113,22 @@ Phân loại theo nơi sửa: (1) boundary xác nhận — model sai quy tắc h
 
 Liệt kê đúng 10 case tự viết: 5 single-turn và 5 multi-turn.
 
+File [data/eval_group.json](../data/eval_group.json), viết và commit trước khi chạy ([`1125b33`](https://github.com/Nhatcony0902/K4-L3B-DAY04-PhamLongNhat-2A202602844-Prompt-Engineering-Tool-Calling-Labs/commit/1125b33)). Run: [runs/v3_B_group_openrouter_20260915T190245174445.json](../runs/v3_B_group_openrouter_20260915T190245174445.json) — `v3+pe445830ef622+t6e8a7d0f59b4`, lệnh `python run_eval.py --provider openrouter --version v3 --suite group --eval-cases data/eval_group.json`. Kết quả 8/10 (0.80), routing 1.0, `provider_error_cases = 0`, `measured_cases = 10`. Không có ticket mới trong `tickets/`.
+
 | Case ID | What it tests | Expected behavior | Result |
 |---|---|---|---|
-|  |  |  |  |
+| G01_sso_status_routing (1 lượt) | Sự cố SSO diện rộng dùng status tool | `check_service_status(sso, production)` | PASS |
+| G02_meeting_room_kb (1 lượt) | Chọn category KB chưa có trong base | `search_kb(category=meeting_room)` | PASS |
+| G03_disk_hardware_check (1 lượt) | Triệu chứng ổ cứng → check hardware, asset mới LT-411 | `inspect_device(LT-411, hardware)` | PASS |
+| G04_missing_printer_asset (1 lượt) | "Máy in tầng 3" không phải asset ID | `clarify(text)` | PASS — hỏi mã tài sản máy in |
+| G05_external_tools_policy (1 lượt) | Câu hỏi dùng chatbot bên ngoài → đúng policy area | `policy(policy_area=external_tools)` | **FAIL** (wrong_arg_value): gọi `policy` nhưng bỏ trống `policy_area` (default `all`). Kết quả vẫn trả đúng tài liệu `external-tools-policy` nên câu trả lời có thể đúng, nhưng tham số chưa chính xác. v3 chỉ làm rõ `category` của `search_kb`, chưa làm với `policy_area` |
+| G06_same_asset_new_check (nhiều lượt) | Giữ asset, đổi check theo lượt mới nhất | `inspect_device(LT-411, software)` | PASS |
+| G07_correct_service_keep_env (nhiều lượt) | Sửa service, giữ environment | `check_service_status(wifi, production)` | PASS |
+| G08_cancel_ticket_then_kb (nhiều lượt) | Hủy write action rồi chuyển sang tìm KB | Không `create_ticket`/`clarify`; `search_kb(category=email)` | **FAIL** (nhãn case là wrong_boundary, lỗi thực tế là argument): boundary giữ đúng — không tạo/xác nhận ticket; chỉ chọn `category=all` thay vì `email`. Mô tả v3 nêu "email" nhưng model không map "Outlook profile" → email. Lặp lại kiểu lỗi M06 ở v1/v2 |
+| G09_clarified_employee_lookup (nhiều lượt) | ID được bổ sung ở lượt sau → gọi thẳng | `lookup_user(EMP-1004)` | PASS |
+| G10_asset_change_reconfirm (nhiều lượt) | Đổi asset của ticket → hiện payload mới, hỏi yes_no | `clarify(yes_no)` | PASS theo score, **nhưng hành vi chưa đạt**: câu hỏi "Dưới đây là thông tin ticket… Bạn có muốn tạo ticket không?" không kèm payload (không có LT-411/high/summary), trái quy tắc v1 "show the full payload". Score chỉ chấm `response_type` nên không bắt được |
+
+Nhận xét: 2 case fail đều là chọn enum mặc định `all` khi mô tả tham số không nêu rõ cách map (G05 `policy_area`, G08 `category`) — cùng nhóm lỗi đã sửa ở v3 cho các case base, cho thấy fix v3 chưa tổng quát hết. G10 cho thấy PASS tự động không chứng minh nội dung xác nhận đúng.
 
 ## B4. Live chat evidence
 
